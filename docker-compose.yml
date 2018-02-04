@@ -1,0 +1,26 @@
+# This files contains everything needed to run this stack in development, staging, or production
+
+version: '3.4'
+
+services:
+  db:
+    image: postgres:alpine
+    restart: unless-stopped
+    ports:
+      - 5433:5432
+    networks:
+      - camelot_glory_wall
+    volumes:
+      - camelot_db:/camelotDB
+    environment:
+      POSTGRES_USER: camelot
+      POSTGRES_PASSWORD: camelot
+      PGDATA: /camelotDB
+      POSTGRES_DB: camelot
+
+volumes:
+  camelot_db:
+
+networks:
+  camelot_glory_wall:
+    attachable: true
