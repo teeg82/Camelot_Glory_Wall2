@@ -4,23 +4,34 @@ version: '3.4'
 
 services:
   db:
-    image: postgres:alpine
+    image: paulrichter/camelot_db:1.0
     restart: unless-stopped
     ports:
-      - 5433:5432
+      - 5435:5432
     networks:
-      - camelot_glory_wall
+      - glory_wall
     volumes:
-      - camelot_db:/camelotDB
+      - glory_wall_db:/camelotDB
     environment:
       POSTGRES_USER: camelot
       POSTGRES_PASSWORD: camelot
       PGDATA: /camelotDB
       POSTGRES_DB: camelot
+  glory_wall:
+    image: paulrichter/camelot_glory_wall:1.0
+    restart: unless-stopped
+    networks:
+      - glory_wall
+    environment:
+      - SLACK_TOKEN=${SLACK_TOKEN}
+      - SLACK_USERNAME=${SLACK_USERNAME}
+    stdin_open: true
+    tty: true
+    command: "python glory_wall.py"
 
 volumes:
-  camelot_db:
+  glory_wall_db:
 
 networks:
-  camelot_glory_wall:
+  glory_wall:
     attachable: true
