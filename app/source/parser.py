@@ -107,7 +107,7 @@ def most_scientists(summary_text):
     scientists = None
     result = scientists_re.search(summary_text)
     if result:
-        scientists = w2n.word_to_num(result.group('scientists'))
+        scientists = w2n.word_to_num(result.group('scientists').encode('ascii', 'ignore'))
     return scientists
 
 
@@ -120,17 +120,6 @@ attack_categories = {
     'most_runes': most_runes,
     'most_scientists': most_scientists,
 }
-
-
-def parse(summary_text):
-    """Main parsing entry point - attempt to parse as much information as possible, scanning multiple times."""
-    # We will attempt to identify the type of summary text by passing it through various parsers
-    # Whichever one retrieves something will determine the message type.
-    results = parse_attack_messages(summary_text)
-    if not results:
-        pass  # move on to another category
-    print("This is what I found: %s" % str(results))
-    return results
 
 
 def parse_attack_messages(summary_text):
@@ -175,3 +164,46 @@ def parse_attack_messages(summary_text):
         return results
     else:
         return None
+
+
+night_strike_kills_re = re.compile(r"assassinated (?P<night_strike_kills>(\d,?)+) enemy troops")
+
+
+def most_night_strike_kills(summary_text):
+    """Extract number of troops killed in a night strike operation."""
+    night_strike_kills = None
+    result = night_strike_kills_re.search(summary_text)
+    if result:
+        night_strike_kills = int(result.group('night_strike_kills'))
+    return night_strike_kills
+
+
+thief_categories = {
+    'most_night_strike_kills': most_night_strike_kills
+}
+
+
+def parse_thief_messages(summary_text):
+    """Attempt to parse thief-oriented information such as night strike kills, propaganda conversions, etc."""
+    results = []
+
+    night_strike_kills = thief_categories['most_night_strike_kills'](summary_text)
+    if night_strike_kills is not None:
+        result = {'summary_text': summary_text, 'category_name': 'most_night_strike_kills', 'value': night_strike_kills}
+        results.append(result)
+
+    if len(results) > 0:
+        return results
+    else:
+        return None
+
+
+def parse(summary_text):
+    """Main parsing entry point - attempt to parse as much information as possible, scanning multiple times."""
+    # We will attempt to identify the type of summary text by passing it through various parsers
+    # Whichever one retrieves something will determine the message type.
+    results = parse_attack_messages(summary_text)
+    if not results:
+        results = parse_thief_messages(summary_text)
+    print("This is what I found: %s" % str(results))
+    return results

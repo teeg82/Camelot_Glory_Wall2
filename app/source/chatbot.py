@@ -31,7 +31,7 @@ def get_response(message):
 # Check if we need to train the bot. This should only ever happen on the first run with a fresh database.
 cursor = connection.execute_sql('select count(*) from response;')
 response_count = cursor.fetchone()
-if response_count == 0:
+if response_count[0] == 0:
     print("Training chat bot, please stand by...")
     chatbot.train("chatterbot.corpus.english")
 else:

@@ -117,16 +117,19 @@ def _handle_on_message(ws, message):
             # strip off the bot mention and grab the summary text
             summary_text = constants.summary_text_re.search(text).group()
 
-            print("Attempting to parse text...")
-            results = parse_summary(summary_text, user_profile)
+            command_response = handle_command_response(summary_text)
 
-            if results is not None and len(results) > 0:
-                glory_walls = save_glory_walls(results, user_profile)
-                render_to_wiki(Category.select())
-                send_response(glory_walls, user_profile)
-            else:
-                response = chatbot.get_response(summary_text)
-                constants.slack.chat.post_message('#glory-wall', response)
+            if not command_response:
+                print("Attempting to parse text...")
+                results = parse_summary(summary_text, user_profile)
+
+                if results is not None and len(results) > 0:
+                    glory_walls = save_glory_walls(results, user_profile)
+                    render_to_wiki(Category.select())
+                    send_response(glory_walls, user_profile)
+                else:
+                    response = chatbot.get_response(summary_text)
+                    constants.slack.chat.post_message('#glory-wall', response)
 
 
 def on_error(ws, error):
@@ -145,6 +148,54 @@ def on_open(ws):
     """Called when the stream is opened."""
     print("### Opened ###")
 
+
+def handle_command_response(message):
+    command_response = False
+    message = message.lower()
+    if message == "help":
+        show_help()
+        command_response = True
+    elif message == "categories":
+        show_categories()
+        command_response = True
+
+    return command_response
+
+
+def show_help():
+    """Display bot usage information to the user in slack"""
+
+    help_text = r"""
+Glory Wall bot usage
+
+*Send a glory wall entry to the bot:*
+
+```
+@glorywall Your forces arrive at foobarbaz...
+```
+
+*Bot commands:*
+
+_Usage:_
+  `@glorywall <command>`
+
+_Available Commands:_
+  - help
+      This help message
+  - categories
+      Displays a list of all currently available categories
+    """
+
+    constants.slack.chat.post_message('#glory-wall', help_text)
+
+
+def show_categories():
+    category_text = ["Here are the list of categories the bot knows about:\n"]
+
+    for category in Category.select():
+        category_text.append(" - %s" % category.display_name)
+
+    constants.slack.chat.post_message('#glory-wall', "\n".join(category_text))
 
 def update_user_list(users):
     """Give a list of users in JSON format, create or update user profiles in the database."""
