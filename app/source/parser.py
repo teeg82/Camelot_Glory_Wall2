@@ -1,35 +1,45 @@
+"""
+Author: Paul Richter, 2018.
+
+Handles parsing of summary messages, returns python values.
+"""
+
+from word2number import w2n
 import re
 
 
-"""
-Your forces arrive at PacMan (6:19). A tough battle took place, but we have managed a victory! Your army has taken 69 acres! 39 acres of buildings survived and can be refitted to fit our needs. We also gained 98 specialist training credits. Taking full control of your new land will take 12.00 days, and will be available on May 14 of YR0. 311 peasants settled on your new lands.
-We lost 55 Warriors, 3 Berserkers and 58 horses in this battle.
-We killed about 32 enemy troops. We also imprisoned 60 additional troops in our Dungeons.
-Our forces will be available again in 12.00 days (on May 14 of YR0).
-"""
-acres_re = re.compile("Your army has taken (?P<acres>\d+) acre")
+acres_re = re.compile("Your army has taken (?P<acres>(\d,?)+) acre")
+
+
 def most_acres(summary_text):
+    """Extract number of acres taken in a trad march."""
     acres = None
     result = acres_re.search(summary_text)
     if result:
-        acres = int(result.group('acres'))
+        acres = int(result.group('acres').replace(",", ""))
     return acres
 
 
-kills_re = re.compile("We killed about (?P<kills>\d+) enemy troops. (We also imprisoned (?P<prisoners>\d+))?")
+kills_re = re.compile("We killed about (?P<kills>(\d,?)+) enemy troops.\s?(We also imprisoned (?P<prisoners>\d+))?")
+
+
 def most_kills(summary_text):
+    """Extract number of kills made in an attack."""
     kills = None
     result = kills_re.search(summary_text)
     if result:
-        kills = int(result.group('kills'))
+        kills = int(result.group('kills').replace(",", ""))
         if result.group('prisoners'):
-            kills += int(result.group('prisoners'))
+            kills += int(result.group('prisoners').replace(",", ""))
     return kills
 
 
 losses_text_re = re.compile(r"We lost (.*) in this battle")
-loss_amount_re = re.compile(r"(\d+)\s[A-Za-z]*((,|\sand)\s)?")
+loss_amount_re = re.compile(r"((\d,?)+)\s[A-Za-z]*((,|\sand)\s)?")
+
+
 def fewest_losses(summary_text):
+    """Extract number of losses suffered in an outbound attack."""
     losses = None
     result = losses_text_re.search(summary_text)
     if result:
@@ -40,7 +50,7 @@ def fewest_losses(summary_text):
             if losses_result:
                 # We don't care about horses, since those are not trained soldiers
                 if "horse" not in losses_result.group():
-                    loss_amount = int(losses_result.group(1))
+                    loss_amount = int(losses_result.group(1).replace(",", ""))
                     losses += loss_amount
                 # Strip off what we found so far and allow the next loop to parse the next loss type
                 losses_text = losses_text.replace(losses_result.group(), "")
@@ -53,24 +63,78 @@ def fewest_losses(summary_text):
     return losses
 
 
+gold_re = re.compile(r"(?P<gold>(\d,?)+) gold coins")
+
+
+def most_gold(summary_text):
+    """Extract amount of gold plundered."""
+    gold = None
+    result = gold_re.search(summary_text)
+    if result:
+        gold = int(result.group('gold').replace(",", ""))
+    return gold
+
+
+food_re = re.compile(r"(?P<food>(\d,?)+) bushels")
+
+
+def most_food(summary_text):
+    """Extract number of bushels plundered."""
+    food = None
+    result = food_re.search(summary_text)
+    if result:
+        food = int(result.group('food').replace(",", ""))
+    return food
+
+
+runes_re = re.compile(r"(?P<runes>(\d,?)+) runes")
+
+
+def most_runes(summary_text):
+    """Extract number of runes plundered."""
+    runes = None
+    result = runes_re.search(summary_text)
+    if result:
+        runes = int(result.group('runes').replace(",", ""))
+    return runes
+
+
+scientists_re = re.compile(r"Your army abducted (?P<scientists>[A-Za-z]+) scientists")
+
+
+def most_scientists(summary_text):
+    """Extract number of scientists abducted."""
+    scientists = None
+    result = scientists_re.search(summary_text)
+    if result:
+        scientists = w2n.word_to_num(result.group('scientists'))
+    return scientists
+
+
 attack_categories = {
     'most_acres': most_acres,
     'most_kills': most_kills,
     'fewest_losses': fewest_losses,
+    'most_gold': most_gold,
+    'most_food': most_food,
+    'most_runes': most_runes,
+    'most_scientists': most_scientists,
 }
 
 
 def parse(summary_text):
+    """Main parsing entry point - attempt to parse as much information as possible, scanning multiple times."""
     # We will attempt to identify the type of summary text by passing it through various parsers
     # Whichever one retrieves something will determine the message type.
     results = parse_attack_messages(summary_text)
     if not results:
-        pass # move on to another category
+        pass  # move on to another category
     print("This is what I found: %s" % str(results))
     return results
 
 
 def parse_attack_messages(summary_text):
+    """Attempt to parse attack-oriented information such as kills, acres, losses, etc."""
     results = []
     acres = attack_categories['most_acres'](summary_text)
     if acres is not None:
@@ -85,6 +149,26 @@ def parse_attack_messages(summary_text):
     losses = attack_categories['fewest_losses'](summary_text)
     if losses is not None:
         result = {'summary_text': summary_text, 'category_name': 'fewest_losses', 'value': losses}
+        results.append(result)
+
+    gold = attack_categories['most_gold'](summary_text)
+    if gold is not None:
+        result = {'summary_text': summary_text, 'category_name': 'most_gold', 'value': gold}
+        results.append(result)
+
+    food = attack_categories['most_food'](summary_text)
+    if food is not None:
+        result = {'summary_text': summary_text, 'category_name': 'most_food', 'value': food}
+        results.append(result)
+
+    runes = attack_categories['most_runes'](summary_text)
+    if runes is not None:
+        result = {'summary_text': summary_text, 'category_name': 'most_runes', 'value': runes}
+        results.append(result)
+
+    scientists = attack_categories['most_scientists'](summary_text)
+    if scientists is not None:
+        result = {'summary_text': summary_text, 'category_name': 'most_scientists', 'value': scientists}
         results.append(result)
 
     if len(results) > 0:

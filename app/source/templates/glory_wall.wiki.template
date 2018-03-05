@@ -1,0 +1,31 @@
+The Glory Wall memorializes the achievements of the kingdom members. An achievement may be considered for entry in the glory wall if it exceeds the average capabilities of the action in comparison with the typical gain by most members of the kingdom. Examples include:
+* Large number of kills in an attack,
+* Massive gains in land, books, or plunder,
+
+Check out the [[Glory Wall - Details]] page for information and instruction on submitting to the glory wall.
+
+{% raw -%}
+{{TOClimit| limit=2 }}
+{%- endraw %}
+{% for category in categories -%}
+{% if category.glory_walls.count() > 0 -%}
+
+=={{category.display_name}}==
+{% if category.compare_greater -%}
+  {% set glory_walls = category.glory_walls.order_by(GloryWall.value.desc()) -%}
+{% else -%}
+  {% set glory_walls = category.glory_walls.order_by(GloryWall.value) -%}
+{%- endif %}
+
+Current high score held by: [[{{glory_walls.first().user.name}}]]
+
+{% for glory_wall in glory_walls -%}
+===[[{{glory_wall.user.name}}]]===
+
+<pre>
+{{glory_wall.full_summary_text}}
+</pre>
+
+{% endfor %}
+{%- endif %}
+{%- endfor %}

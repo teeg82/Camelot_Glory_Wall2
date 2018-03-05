@@ -52,7 +52,7 @@ class GloryWall(BaseModel):
 
     id = AutoField()
     full_summary_text = TextField()
-    category = ForeignKeyField(Category)
+    category = ForeignKeyField(Category, backref="glory_walls")
     user = ForeignKeyField(User)
     value = IntegerField()
     timestamp = DateTimeField()
