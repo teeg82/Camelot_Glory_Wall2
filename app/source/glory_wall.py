@@ -89,7 +89,8 @@ def on_message(ws, message):
         logging.error(traceback.format_exc())
         constants.slack.chat.post_message('#glory-wall',
                                           "Aww crap, something went horribly wrong with the bot. @the_round_table will check the logs and fix it.",
-                                          link_names=True)
+                                          link_names=True,
+                                          as_user=True)
 
 
 def _handle_on_message(ws, message):
@@ -129,7 +130,7 @@ def _handle_on_message(ws, message):
                     send_response(glory_walls, user_profile)
                 else:
                     response = chatbot.get_response(summary_text)
-                    constants.slack.chat.post_message('#glory-wall', response)
+                    constants.slack.chat.post_message('#glory-wall', response, as_user=True)
 
 
 def on_error(ws, error):
@@ -186,7 +187,7 @@ _Available Commands:_
       Displays a list of all currently available categories
     """
 
-    constants.slack.chat.post_message('#glory-wall', help_text)
+    constants.slack.chat.post_message('#glory-wall', help_text, as_user=True)
 
 
 def show_categories():
@@ -195,7 +196,7 @@ def show_categories():
     for category in Category.select():
         category_text.append(" - %s" % category.display_name)
 
-    constants.slack.chat.post_message('#glory-wall', "\n".join(category_text))
+    constants.slack.chat.post_message('#glory-wall', "\n".join(category_text), as_user=True)
 
 def update_user_list(users):
     """Give a list of users in JSON format, create or update user profiles in the database."""
@@ -245,10 +246,15 @@ def save_glory_walls(results, user_profile):
                                                timestamp=datetime.datetime.now())
 
         try:
+            if category.compare_greater:
             # Grab the top score
-            high_score = GloryWall.select().where(GloryWall.category == category.id) \
-                                           .order_by(GloryWall.value.desc()) \
-                                           .limit(1).get()
+                high_score = GloryWall.select().where(GloryWall.category == category.id) \
+                                               .order_by(GloryWall.value.desc()) \
+                                               .limit(1).get()
+            else:
+                high_score = GloryWall.select().where(GloryWall.category == category.id) \
+                               .order_by(GloryWall.value.asc()) \
+                               .limit(1).get()
         except GloryWall.DoesNotExist:
             high_score = None
 
@@ -323,7 +329,7 @@ def send_response(glory_walls, user_profile):
     else:
         response.append("You can view the glory wall in all its wally gloriousness here: %s" % WIKI_URL)
 
-    constants.slack.chat.post_message('#glory-wall', " ".join(response), link_names=True)
+    constants.slack.chat.post_message('#glory-wall', " ".join(response), link_names=True, as_user=True)
 
 
 if __name__ == "__main__":
