@@ -54,7 +54,7 @@ class GloryWallConstants(object):
         self.bot_userid = connection_info[u'self'][u'id']
 
         self.bot_mention = "<@%s>" % self.bot_userid
-        self.summary_text_re = re.compile('(?<=%s\s)(.+)((?:\n.+)*)' % self.bot_mention, re.MULTILINE)
+        self.summary_text_re = re.compile(r'(?P<bot_mention>%s)' % self.bot_mention, re.MULTILINE)
 
         websocket.enableTrace(True)
         ws = websocket.WebSocketApp(self.url,
@@ -115,7 +115,7 @@ def _handle_on_message(ws, message):
             print("Found user profile with id %s" % user_id)
 
             # strip off the bot mention and grab the summary text
-            summary_text = constants.summary_text_re.search(text).group()
+            summary_text = re.sub(constants.summary_text_re, '', text).strip()
 
             command_response = handle_command_response(summary_text)
 
