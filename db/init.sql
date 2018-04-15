@@ -12,7 +12,7 @@ CREATE INDEX IF NOT EXISTS camelot_users_slack_id_idx ON camelot_users (slack_id
 CREATE TABLE IF NOT EXISTS camelot_categories
 (
     id serial primary key,
-    name VARCHAR(30) not null, -- internal name
+    name VARCHAR(50) not null, -- internal name
     display_name VARCHAR(255) not null,
     description text,
     compare_greater boolean -- if true, the winning value must be greater than the current. Otherwise comparison must be lesser than.
@@ -72,3 +72,8 @@ INSERT INTO camelot_categories
     (name, display_name, description, compare_greater)
 SELECT 'most_night_strike_kills', 'Most troops assassinated in a single night strike operation', 'Most number of troops assassinated in a single night strike operation', true
 WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'most_night_strike_kills');
+
+INSERT INTO camelot_categories
+    (name, display_name, description, compare_greater)
+SELECT 'most_buildings_destroyed_in_tornado', 'Most Buildings Destroyed in Tornado', 'Most number of buildings destroyed in a single tornado spell', true
+WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'most_buildings_destroyed_in_tornado');
