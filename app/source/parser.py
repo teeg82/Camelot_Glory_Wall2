@@ -122,43 +122,49 @@ attack_categories = {
 }
 
 
+attack_message_re = re.compile("(Your forces arrive)")
+
 def parse_attack_messages(summary_text):
-    """Attempt to parse attack-oriented information such as kills, acres, losses, etc."""
+
     results = []
-    acres = attack_categories['most_acres'](summary_text)
-    if acres is not None:
-        result = {'summary_text': summary_text, 'category_name': 'most_acres', 'value': acres}
-        results.append(result)
+    is_attack_message = attack_message_re.search(summary_text)
+    # Reject this entirely if it does not look like an attack message.
+    if(is_attack_message):
+        """Attempt to parse attack-oriented information such as kills, acres, losses, etc."""
+        acres = attack_categories['most_acres'](summary_text)
+        if acres is not None:
+            result = {'summary_text': summary_text, 'category_name': 'most_acres', 'value': acres}
+            results.append(result)
 
-    kills = attack_categories['most_kills'](summary_text)
-    if kills is not None:
-        result = {'summary_text': summary_text, 'category_name': 'most_kills', 'value': kills}
-        results.append(result)
+        kills = attack_categories['most_kills'](summary_text)
+        if kills is not None:
+            result = {'summary_text': summary_text, 'category_name': 'most_kills', 'value': kills}
+            results.append(result)
 
-    losses = attack_categories['fewest_losses'](summary_text)
-    if losses is not None:
-        result = {'summary_text': summary_text, 'category_name': 'fewest_losses', 'value': losses}
-        results.append(result)
+        losses = attack_categories['fewest_losses'](summary_text)
+        if losses is not None:
+            result = {'summary_text': summary_text, 'category_name': 'fewest_losses', 'value': losses}
+            results.append(result)
 
-    gold = attack_categories['most_gold'](summary_text)
-    if gold is not None:
-        result = {'summary_text': summary_text, 'category_name': 'most_gold', 'value': gold}
-        results.append(result)
+        gold = attack_categories['most_gold'](summary_text)
+        if gold is not None:
+            result = {'summary_text': summary_text, 'category_name': 'most_gold', 'value': gold}
+            results.append(result)
 
-    food = attack_categories['most_food'](summary_text)
-    if food is not None:
-        result = {'summary_text': summary_text, 'category_name': 'most_food', 'value': food}
-        results.append(result)
+        food = attack_categories['most_food'](summary_text)
+        if food is not None:
+            result = {'summary_text': summary_text, 'category_name': 'most_food', 'value': food}
+            results.append(result)
 
-    runes = attack_categories['most_runes'](summary_text)
-    if runes is not None:
-        result = {'summary_text': summary_text, 'category_name': 'most_runes', 'value': runes}
-        results.append(result)
+        runes = attack_categories['most_runes'](summary_text)
+        if runes is not None:
+            result = {'summary_text': summary_text, 'category_name': 'most_runes', 'value': runes}
+            results.append(result)
 
-    scientists = attack_categories['most_scientists'](summary_text)
-    if scientists is not None:
-        result = {'summary_text': summary_text, 'category_name': 'most_scientists', 'value': scientists}
-        results.append(result)
+        scientists = attack_categories['most_scientists'](summary_text)
+        if scientists is not None:
+            result = {'summary_text': summary_text, 'category_name': 'most_scientists', 'value': scientists}
+            results.append(result)
 
     if len(results) > 0:
         return results
@@ -178,18 +184,37 @@ def most_night_strike_kills(summary_text):
     return night_strike_kills
 
 
-thief_categories = {
-    'most_night_strike_kills': most_night_strike_kills
+buildings_destroyed_in_tornado_re = re.compile(r"laying waste to (?P<buildings>(\d,?)+) acres of buildings")
+
+
+def most_buildings_destroyed_in_tornado(summary_text):
+    buildings_destroyed = None
+    result = buildings_destroyed_in_tornado_re.search(summary_text)
+    if result:
+        buildings_destroyed = int(result.group('buildings'))
+    return buildings_destroyed
+
+
+tm_categories = {
+    'most_night_strike_kills': most_night_strike_kills,
+    'most_buildings_destroyed_in_tornado': most_buildings_destroyed_in_tornado
 }
+# ROB THE VAULTS
+# Early indications show that our operation was a success. Our thieves have returned with 34,197 gold coins.
 
 
-def parse_thief_messages(summary_text):
+def parse_tm_messages(summary_text):
     """Attempt to parse thief-oriented information such as night strike kills, propaganda conversions, etc."""
     results = []
 
-    night_strike_kills = thief_categories['most_night_strike_kills'](summary_text)
+    night_strike_kills = tm_categories['most_night_strike_kills'](summary_text)
     if night_strike_kills is not None:
         result = {'summary_text': summary_text, 'category_name': 'most_night_strike_kills', 'value': night_strike_kills}
+        results.append(result)
+
+    buildings_tornado = tm_categories['most_buildings_destroyed_in_tornado'](summary_text)
+    if buildings_tornado is not None:
+        result = {'summary_text': summary_text, 'category_name': 'most_buildings_destroyed_in_tornado', 'value': buildings_tornado}
         results.append(result)
 
     if len(results) > 0:
@@ -204,6 +229,6 @@ def parse(summary_text):
     # Whichever one retrieves something will determine the message type.
     results = parse_attack_messages(summary_text)
     if not results:
-        results = parse_thief_messages(summary_text)
+        results = parse_tm_messages(summary_text)
     print("This is what I found: %s" % str(results))
     return results
