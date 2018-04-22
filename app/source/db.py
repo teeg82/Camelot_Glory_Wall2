@@ -56,3 +56,4 @@ class GloryWall(BaseModel):
     user = ForeignKeyField(User)
     value = IntegerField()
     timestamp = DateTimeField()
+    age = CharField()
