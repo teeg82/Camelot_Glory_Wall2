@@ -23,15 +23,15 @@ from db import (
 
 import chatbot
 
-from parser import parse
+from parser.parser import parse
 
 
 from wikirenderer import render_to_wiki
 
-
+UTOPIA_AGE = os.getenv('UTOPIA_AGE', '')
 SLACK_TOKEN = os.getenv('SLACK_TOKEN', '')
 SLACK_USERNAME = os.getenv('SLACK_USERNAME', '')
-WIKI_URL = "https://camelot.miraheze.org/wiki/Glory_Wall"
+WIKI_URL = "https://camelot.miraheze.org/wiki/Glory_Wall_-_Age_%s" % UTOPIA_AGE
 
 
 if len(sys.argv) > 1 and sys.argv[1] is not None:
@@ -126,7 +126,7 @@ def _handle_on_message(ws, message):
 
                 if results is not None and len(results) > 0:
                     glory_walls = save_glory_walls(results, user_profile)
-                    render_to_wiki(Category.select())
+                    render_to_wiki(Category.select(), UTOPIA_AGE)
                     send_response(glory_walls, user_profile)
                 else:
                     response = chatbot.get_response(summary_text)
@@ -243,7 +243,8 @@ def save_glory_walls(results, user_profile):
                                                user=user_profile.id,
                                                full_summary_text=result['summary_text'],
                                                value=result['value'],
-                                               timestamp=datetime.datetime.now())
+                                               timestamp=datetime.datetime.now(),
+                                               age=UTOPIA_AGE)
 
         try:
             if category.compare_greater:

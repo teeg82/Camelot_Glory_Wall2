@@ -25,6 +25,7 @@ services:
     environment:
       - SLACK_TOKEN=${SLACK_TOKEN}
       - SLACK_USERNAME=${SLACK_USERNAME}
+      - UTOPIA_AGE=76
     stdin_open: true
     tty: true
     command: "python glory_wall.py"

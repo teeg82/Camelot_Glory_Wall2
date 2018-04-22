@@ -12,8 +12,8 @@ Check out the [[Glory Wall - Details]] page for information and instruction on s
 
 =={{category.display_name}}==
 {% if category.compare_greater -%}
-  {% set glory_walls = category.glory_walls.order_by(GloryWall.value.desc()) -%}
-  {% set high_score = category.glory_walls.order_by(GloryWall.value.desc()).first() -%}
+  {% set glory_walls = category.glory_walls.where(GloryWall.age==utopia_age).order_by(GloryWall.value.desc()) -%}
+  {% set high_score = category.glory_walls.where(GloryWall.age==utopia_age).order_by(GloryWall.value.desc()).first() -%}
 {% else -%}
   {% set glory_walls = category.glory_walls.order_by(GloryWall.value) -%}
   {% set high_score = category.glory_walls.order_by(GloryWall.value).first() -%}
