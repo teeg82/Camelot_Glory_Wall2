@@ -17,6 +17,7 @@ WIKI_GLORY_WALL_URL = "https://camelot.miraheze.org/w/index.php?title=Glory_Wall
 
 cook = cookielib.CookieJar()
 req = mechanize.Browser()
+req.set_handle_robots(False)
 req.set_cookiejar(cook)
 
 
