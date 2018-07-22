@@ -121,17 +121,20 @@ def _handle_on_message(ws, message):
             command_response = handle_command_response(summary_text)
 
             if not command_response:
-                print("Attempting to parse text...")
-                results = parse_summary(summary_text, user_profile)
+                handle_summary_parsing(summary_text, user_profile)
 
-                if results is not None and len(results) > 0:
-                    glory_walls = save_glory_walls(results, user_profile)
-                    render_to_wiki(Category.select(), UTOPIA_AGE)
-                    send_response(glory_walls, user_profile)
-                else:
-                    response = chatbot.get_response(summary_text)
-                    constants.slack.chat.post_message('#glory-wall', response, as_user=True)
 
+def handle_summary_parsing(summary_text, user_profile):
+    print("Attempting to parse text...")
+    results = parse_summary(summary_text, user_profile)
+
+    if results is not None and len(results) > 0:
+        glory_walls = save_glory_walls(results, user_profile)
+        render_to_wiki(Category.select(), UTOPIA_AGE)
+        send_response(glory_walls, user_profile)
+    else:
+        response = chatbot.get_response(summary_text)
+        constants.slack.chat.post_message('#glory-wall', response, as_user=True)
 
 def on_error(ws, error):
     """Called on error."""
@@ -233,7 +236,8 @@ def save_glory_walls(results, user_profile):
         category = Category.select().where(Category.name == result['category_name']).get()
         # Get the existing glory wall entry for the current user and category
         user_glory_wall = GloryWall.get_or_none(GloryWall.category == category.id,
-                                                GloryWall.user == user_profile.id)
+                                                GloryWall.user == user_profile.id,
+                                                age=UTOPIA_AGE)
 
         new_entry = False
         # Create a glory wall entry if the user does not yet have one
@@ -249,11 +253,11 @@ def save_glory_walls(results, user_profile):
         try:
             if category.compare_greater:
             # Grab the top score
-                high_score = GloryWall.select().where(GloryWall.category == category.id) \
+                high_score = GloryWall.select().where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
                                                .order_by(GloryWall.value.desc()) \
                                                .limit(1).get()
             else:
-                high_score = GloryWall.select().where(GloryWall.category == category.id) \
+                high_score = GloryWall.select().where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
                                .order_by(GloryWall.value.asc()) \
                                .limit(1).get()
         except GloryWall.DoesNotExist:

@@ -8,15 +8,15 @@ Check out the [[Glory Wall - Details]] page for information and instruction on s
 {{TOClimit| limit=2 }}
 {%- endraw %}
 {% for category in categories -%}
-{% if category.glory_walls.count() > 0 -%}
+{% if category.glory_walls.where(GloryWall.age==utopia_age).count() > 0 -%}
 
 =={{category.display_name}}==
 {% if category.compare_greater -%}
   {% set glory_walls = category.glory_walls.where(GloryWall.age==utopia_age).order_by(GloryWall.value.desc()) -%}
   {% set high_score = category.glory_walls.where(GloryWall.age==utopia_age).order_by(GloryWall.value.desc()).first() -%}
 {% else -%}
-  {% set glory_walls = category.glory_walls.order_by(GloryWall.value) -%}
-  {% set high_score = category.glory_walls.order_by(GloryWall.value).first() -%}
+  {% set glory_walls = category.glory_walls.where(GloryWall.age==utopia_age).order_by(GloryWall.value) -%}
+  {% set high_score = category.glory_walls.where(GloryWall.age==utopia_age).order_by(GloryWall.value).first() -%}
 {%- endif %}
 
 Current high score held by: [[{{high_score.user.name}}]]
