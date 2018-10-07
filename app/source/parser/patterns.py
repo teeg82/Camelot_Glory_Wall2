@@ -20,6 +20,7 @@ fireball_re = re.compile(r"A fireball burns through the skies of (?:.*). (?P<pea
 lightning_re = re.compile(r"Lightning strikes the Towers in (?:.*) and incinerates (?P<runes>(?:\d,?)+) runes")
 nightmare_re = re.compile(r"During the night, (?P<troops>(?:\d,?)+) of the men in the armies")
 
+massacre_re = re.compile(r"massacred (?P<massacre>(?:\d,?)+) peasants")
 acres_re = re.compile(r"Your army has taken (?P<acres>(?:\d,?)+) acre")
 kills_re = re.compile(r"We killed about (?P<kills>(?:\d,?)+) enemy troops.\s?(?:We also imprisoned (?P<prisoners>\d+))?")
 losses_text_re = re.compile(r"We lost (.*) in this battle")

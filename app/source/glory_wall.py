@@ -32,6 +32,12 @@ UTOPIA_AGE = os.getenv('UTOPIA_AGE', '')
 SLACK_TOKEN = os.getenv('SLACK_TOKEN', '')
 SLACK_USERNAME = os.getenv('SLACK_USERNAME', '')
 WIKI_URL = "https://camelot.miraheze.org/wiki/Glory_Wall_-_Age_%s" % UTOPIA_AGE
+APP_ENV = os.getenv('APP_ENV', 'DEBUG')
+
+if APP_ENV == 'DEBUG':
+    OUTPUT_CHANNEL = '#area51'
+else:
+    OUTPUT_CHANNEL = '#glory-wall'
 
 
 if len(sys.argv) > 1 and sys.argv[1] is not None:
@@ -87,7 +93,7 @@ def on_message(ws, message):
     except BaseException as e:
         logging.error('An exception occurred: %s' % e)
         logging.error(traceback.format_exc())
-        constants.slack.chat.post_message('#glory-wall',
+        constants.slack.chat.post_message(OUTPUT_CHANNEL,
                                           "Aww crap, something went horribly wrong with the bot. @the_round_table will check the logs and fix it.",
                                           link_names=True,
                                           as_user=True)
@@ -122,6 +128,14 @@ def _handle_on_message(ws, message):
 
             if not command_response:
                 handle_summary_parsing(summary_text, user_profile)
+
+                if results is not None and len(results) > 0:
+                    glory_walls = save_glory_walls(results, user_profile)
+                    render_to_wiki(Category.select(), UTOPIA_AGE)
+                    send_response(glory_walls, user_profile)
+                else:
+                    response = chatbot.get_response(summary_text)
+                    constants.slack.chat.post_message(OUTPUT_CHANNEL, response, as_user=True)
 
 
 def handle_summary_parsing(summary_text, user_profile):
@@ -190,7 +204,7 @@ _Available Commands:_
       Displays a list of all currently available categories
     """
 
-    constants.slack.chat.post_message('#glory-wall', help_text, as_user=True)
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, help_text, as_user=True)
 
 
 def show_categories():
@@ -199,7 +213,7 @@ def show_categories():
     for category in Category.select():
         category_text.append(" - %s" % category.display_name)
 
-    constants.slack.chat.post_message('#glory-wall', "\n".join(category_text), as_user=True)
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, "\n".join(category_text), as_user=True)
 
 def update_user_list(users):
     """Give a list of users in JSON format, create or update user profiles in the database."""
@@ -252,14 +266,15 @@ def save_glory_walls(results, user_profile):
 
         try:
             if category.compare_greater:
-            # Grab the top score
+                # Grab the top score
                 high_score = GloryWall.select().where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
                                                .order_by(GloryWall.value.desc()) \
                                                .limit(1).get()
             else:
-                high_score = GloryWall.select().where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
-                               .order_by(GloryWall.value.asc()) \
-                               .limit(1).get()
+                high_score = GloryWall.select() \
+                             .where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
+                             .order_by(GloryWall.value.asc()) \
+                             .limit(1).get()
         except GloryWall.DoesNotExist:
             high_score = None
 
@@ -334,7 +349,7 @@ def send_response(glory_walls, user_profile):
     else:
         response.append("You can view the glory wall in all its wally gloriousness here: %s" % WIKI_URL)
 
-    constants.slack.chat.post_message('#glory-wall', " ".join(response), link_names=True, as_user=True)
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, " ".join(response), link_names=True, as_user=True)
 
 
 if __name__ == "__main__":
