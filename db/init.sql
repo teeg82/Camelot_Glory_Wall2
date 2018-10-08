@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS camelot_users
 (
     id  serial primary key,
     name VARCHAR(30) not null,
+    display_name VARCHAR(255) not null,
     slack_id VARCHAR(20) not null,
     is_bot boolean,
     is_deleted boolean

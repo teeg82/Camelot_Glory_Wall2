@@ -29,6 +29,7 @@ class User(BaseModel):
 
     id = AutoField()
     name = CharField()
+    display_name = CharField()
     slack_id = CharField()
     is_bot = BooleanField()
     is_deleted = BooleanField()
