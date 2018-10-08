@@ -221,8 +221,11 @@ def show_categories():
 
     constants.slack.chat.post_message(OUTPUT_CHANNEL, "\n".join(category_text), as_user=True)
 
+
 def show_scores(message):
     message_parts = message.split()
+    message_parts.reverse()
+
     if len(message_parts) == 0:
         constants.slack.chat.post_message(OUTPUT_CHANNEL, "I need to know what category of scores to look up. See `@glorywall help` for more details.\n Example: `@glorywall [category] [limit]`.", as_user=True)
         return
@@ -232,6 +235,12 @@ def show_scores(message):
     limit = None
     if len(message_parts) > 0:
         limit = message_parts.pop()
+        try:
+            limit = int(limit)
+        except ValueError:
+            constants.slack.chat.post_message(OUTPUT_CHANNEL, "I don't know what limit _%s_ means" % limit, as_user=True)
+            return
+
         if limit is not None and limit <= 0:
             constants.slack.chat.post_message(OUTPUT_CHANNEL, "Tell me honestly, does asking for a limit of zero or less make any sense to you?", as_user=True)
             return
@@ -250,7 +259,7 @@ def show_scores(message):
         scores_query.order_by(GloryWall.value.asc())
 
     if limit:
-        scores_query.limit(limit)
+        scores_query = scores_query.limit(limit)
 
     if scores_query.count() == 0:
         constants.slack.chat.post_message(OUTPUT_CHANNEL, "Sorry, I could not find any scores for category %s" % category_name, as_user=True)
