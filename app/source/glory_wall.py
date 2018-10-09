@@ -118,8 +118,11 @@ def _handle_on_message(ws, message):
 
             # For now, we're going to update everybody every time the bot
             # receives a message
-            users = constants.slack.users.list().body
-            update_user_list(users)
+            try:
+                users = constants.slack.users.list().body
+                update_user_list(users)
+            except:
+                print("WARN: Unable to connect to slack to obtain a user list")
 
             user_profile = get_user_profile(user_id)
             print("Found user profile with id %s" % user_id)
