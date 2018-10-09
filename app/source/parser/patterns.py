@@ -19,7 +19,10 @@ fools_gold_re = re.compile(r"(?P<gold>(?:\d,?)+) gold coins have been turned int
 fireball_re = re.compile(r"A fireball burns through the skies of (?:.*). (?P<peasants>(?:\d,?)+) peasants are killed")
 lightning_re = re.compile(r"Lightning strikes the Towers in (?:.*) and incinerates (?P<runes>(?:\d,?)+) runes")
 nightmare_re = re.compile(r"During the night, (?P<troops>(?:\d,?)+) of the men in the armies")
+land_lust_re = re.compile(r"given us another (?P<acres>(?:\d,?)+) acres of land")
+tree_of_gold_re = re.compile(r"(?P<gold>(?:\d,?)+) gold coins have fallen from the trees")
 
+massacre_re = re.compile(r"massacred (?P<massacre>(?:\d,?)+) peasants")
 acres_re = re.compile(r"Your army has taken (?P<acres>(?:\d,?)+) acre")
 kills_re = re.compile(r"We killed about (?P<kills>(?:\d,?)+) enemy troops.\s?(?:We also imprisoned (?P<prisoners>\d+))?")
 losses_text_re = re.compile(r"We lost (.*) in this battle")

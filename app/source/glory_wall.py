@@ -28,9 +28,18 @@ from parser.parser import parse
 
 from wikirenderer import render_to_wiki
 
-UTOPIA_AGE = os.getenv('UTOPIA_AGE', '')
 SLACK_TOKEN = os.getenv('SLACK_TOKEN', '')
 SLACK_USERNAME = os.getenv('SLACK_USERNAME', '')
+APP_ENV = os.getenv('APP_ENV', 'DEBUG')
+
+
+if APP_ENV == 'DEBUG':
+    OUTPUT_CHANNEL = '#area51'
+    UTOPIA_AGE = 'DEV'
+else:
+    OUTPUT_CHANNEL = '#glory-wall'
+    UTOPIA_AGE = os.getenv('UTOPIA_AGE', '')
+
 WIKI_URL = "https://camelot.miraheze.org/wiki/Glory_Wall_-_Age_%s" % UTOPIA_AGE
 
 
@@ -87,7 +96,7 @@ def on_message(ws, message):
     except BaseException as e:
         logging.error('An exception occurred: %s' % e)
         logging.error(traceback.format_exc())
-        constants.slack.chat.post_message('#glory-wall',
+        constants.slack.chat.post_message(OUTPUT_CHANNEL,
                                           "Aww crap, something went horribly wrong with the bot. @the_round_table will check the logs and fix it.",
                                           link_names=True,
                                           as_user=True)
@@ -134,7 +143,7 @@ def handle_summary_parsing(summary_text, user_profile):
         send_response(glory_walls, user_profile)
     else:
         response = chatbot.get_response(summary_text)
-        constants.slack.chat.post_message('#glory-wall', response, as_user=True)
+        constants.slack.chat.post_message(OUTPUT_CHANNEL, response, as_user=True)
 
 def on_error(ws, error):
     """Called on error."""
@@ -162,6 +171,9 @@ def handle_command_response(message):
     elif message == "categories":
         show_categories()
         command_response = True
+    elif 'scores' in message:
+        show_scores(message.replace('scores', '').strip())
+        command_response = True
 
     return command_response
 
@@ -188,18 +200,76 @@ _Available Commands:_
       This help message
   - categories
       Displays a list of all currently available categories
+  - scores [category] [limit]
+      Displays the list of scores for the given category
+      Parameters:
+        category - The underscored category name. The `categories` command lists the underscored name in parenthesis.
+        limit - Optional; by default the `scores` command will list ALL scores. This parameter limits the list by the given number.
+      Example:
+        `@glorywall most_kills`
+        `@glorywall most_acres 3`
     """
 
-    constants.slack.chat.post_message('#glory-wall', help_text, as_user=True)
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, help_text, as_user=True)
 
 
 def show_categories():
     category_text = ["Here are the list of categories the bot knows about:\n"]
 
     for category in Category.select():
-        category_text.append(" - %s" % category.display_name)
+        category_text.append(" - *%s* (_%s_)" % (category.display_name, category.name))
 
-    constants.slack.chat.post_message('#glory-wall', "\n".join(category_text), as_user=True)
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, "\n".join(category_text), as_user=True)
+
+
+def show_scores(message):
+    message_parts = message.split()
+    message_parts.reverse()
+
+    if len(message_parts) == 0:
+        constants.slack.chat.post_message(OUTPUT_CHANNEL, "I need to know what category of scores to look up. See `@glorywall help` for more details.\n Example: `@glorywall [category] [limit]`.", as_user=True)
+        return
+
+    category_name = message_parts.pop()
+
+    limit = None
+    if len(message_parts) > 0:
+        limit = message_parts.pop()
+        try:
+            limit = int(limit)
+        except ValueError:
+            constants.slack.chat.post_message(OUTPUT_CHANNEL, "I don't know what limit _%s_ means" % limit, as_user=True)
+            return
+
+        if limit is not None and limit <= 0:
+            constants.slack.chat.post_message(OUTPUT_CHANNEL, "Tell me honestly, does asking for a limit of zero or less make any sense to you?", as_user=True)
+            return
+
+    try:
+        category = Category.select().where(Category.name == category_name).get()
+    except Category.DoesNotExist:
+        constants.slack.chat.post_message(OUTPUT_CHANNEL, "Sorry, I don't have any categories called '%s'" % category_name, as_user=True)
+        return
+
+    scores_query = GloryWall.select() \
+                            .where(GloryWall.category == category, GloryWall.age == UTOPIA_AGE)
+    if category.compare_greater:
+        scores_query.order_by(GloryWall.value.desc())
+    else:
+        scores_query.order_by(GloryWall.value.asc())
+
+    if limit:
+        scores_query = scores_query.limit(limit)
+
+    if scores_query.count() == 0:
+        constants.slack.chat.post_message(OUTPUT_CHANNEL, "Sorry, I could not find any scores for category %s" % category_name, as_user=True)
+        return
+
+    output = ["*Here are the list of scores for _%s_*" % category_name]
+    for score in scores_query:
+        output.append('%s: %s' % (score.user.name, score.value))
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, "\n".join(output), as_user=True)
+
 
 def update_user_list(users):
     """Give a list of users in JSON format, create or update user profiles in the database."""
@@ -207,11 +277,13 @@ def update_user_list(users):
         user = User.get_or_none(slack_id=user_data.get('id'))
         if user is None:
             user = User.create(name=user_data.get('name'),
+                               display_name=user_data.get('profile').get('display_name'),
                                slack_id=user_data.get('id'),
                                is_bot=user_data.get('is_bot'),
                                is_deleted=user_data.get('deleted'))
         else:
             user.name = user_data.get('name')
+            user.display_name = user_data.get('profile').get('display_name')
             user.is_bot = user_data.get('is_bot')
             user.is_deleted = user_data.get('deleted')
             user.save()
@@ -232,12 +304,13 @@ def save_glory_walls(results, user_profile):
     top_score = []  # when the user's score has beaten the top score
     own_score = []  # when the user's score has beaten their own score
     new_score = []  # when the user does not have an entry for the given category
+
     for result in results:
         category = Category.select().where(Category.name == result['category_name']).get()
         # Get the existing glory wall entry for the current user and category
         user_glory_wall = GloryWall.get_or_none(GloryWall.category == category.id,
                                                 GloryWall.user == user_profile.id,
-                                                age=UTOPIA_AGE)
+                                                GloryWall.age==UTOPIA_AGE)
 
         new_entry = False
         # Create a glory wall entry if the user does not yet have one
@@ -252,14 +325,17 @@ def save_glory_walls(results, user_profile):
 
         try:
             if category.compare_greater:
-            # Grab the top score
-                high_score = GloryWall.select().where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
+                # Grab the top score
+                high_score = GloryWall.select().where(GloryWall.category == category.id,
+                                                      GloryWall.age == UTOPIA_AGE) \
                                                .order_by(GloryWall.value.desc()) \
                                                .limit(1).get()
             else:
-                high_score = GloryWall.select().where(GloryWall.category == category.id, GloryWall.age == UTOPIA_AGE) \
-                               .order_by(GloryWall.value.asc()) \
-                               .limit(1).get()
+                high_score = GloryWall.select() \
+                                      .where(GloryWall.category == category.id,
+                                             GloryWall.age == UTOPIA_AGE) \
+                                      .order_by(GloryWall.value.asc()) \
+                                      .limit(1).get()
         except GloryWall.DoesNotExist:
             high_score = None
 
@@ -271,6 +347,16 @@ def save_glory_walls(results, user_profile):
                 print("Existing high score exceeded")
                 update_glory_wall(user_glory_wall, result)
                 top_score.append({'old_score': high_score, 'current_high_score': user_glory_wall})
+        elif high_score.user == user_profile and new_entry:
+            print("New entry achieved top score")
+            old_top_score = GloryWall.select() \
+                                     .where(GloryWall.category == category.id,
+                                            GloryWall.age == UTOPIA_AGE,
+                                            GloryWall.user != user_profile) \
+                                     .order_by(GloryWall.value.asc()) \
+                                     .limit(1)
+            old_top_score = old_top_score.get() if len(old_top_score) == 1 else None
+            top_score.append({'old_score': old_top_score, 'current_high_score': user_glory_wall})
         elif high_score is None:
             print("High score did not exist.")
             # If there was no high score for this entry, it means nobody had ever entered anything.
@@ -313,7 +399,12 @@ def send_response(glory_walls, user_profile):
             response.append(" - %s, with a score of %d" % (current_high_score.category.display_name, current_high_score.value))
             old_score = score.get('old_score', None)
             if old_score:
-                response.append("beating the previous score held by @%s" % old_score.user.name)
+                if old_score.user == user_profile:
+                    response.append("beating your previous score of %s\n" % str(old_score.value))
+                else:
+                    response.append("beating the previous score of %s held by @%s\n" % (str(old_score.value), old_score.user.name))
+            else:
+                response.append('\n')
         response.append("\n\n")
 
     own_score = glory_walls["own_score"]
@@ -325,7 +416,11 @@ def send_response(glory_walls, user_profile):
 
     new_score = glory_walls["new_score"]
     if len(new_score) > 0:
-        response.append("I've added the following scores to the glory wall for you:\n")
+        if len(new_score) == 1:
+            plural_this = "this category"
+        else:
+            plural_this = "these categories"
+        response.append("You did not beat the top score, but you have no scores in %s, so I've added the following to the glory wall for you:\n" % plural_this)
         for score in new_score:
             response.append(" - %s, with a score of %d\n" % (score.category.display_name, score.value))
 
@@ -334,7 +429,7 @@ def send_response(glory_walls, user_profile):
     else:
         response.append("You can view the glory wall in all its wally gloriousness here: %s" % WIKI_URL)
 
-    constants.slack.chat.post_message('#glory-wall', " ".join(response), link_names=True, as_user=True)
+    constants.slack.chat.post_message(OUTPUT_CHANNEL, " ".join(response), link_names=True, as_user=True)
 
 
 if __name__ == "__main__":
