@@ -71,6 +71,11 @@ WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'most_scientists
 
 INSERT INTO camelot_categories
     (name, display_name, description, compare_greater)
+SELECT 'most_massacre_kills', 'Most civilians massacred', 'Most number of peasants, thieves and wizards murdered in single massacre attack', true
+WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'most_massacre_kills');
+
+INSERT INTO camelot_categories
+    (name, display_name, description, compare_greater)
 SELECT 'night_strike', 'Most troops assassinated in a single night strike operation', 'Most number of troops assassinated in a single night strike operation', true
 WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'night_strike');
 
@@ -123,6 +128,16 @@ INSERT INTO camelot_categories
     (name, display_name, description, compare_greater)
 SELECT 'tornado', 'Most buildings destroyed in a tornado', 'Most buildings blown down in a single tornado spell', true
 WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'tornado');
+
+INSERT INTO camelot_categories
+    (name, display_name, description, compare_greater)
+SELECT 'land_lust', 'Most acres gained with land lust', 'Most acres stolen in a single land lust spell', true
+WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'last_lust');
+
+INSERT INTO camelot_categories
+    (name, display_name, description, compare_greater)
+SELECT 'tree_of_gold', 'Most gold shaken from the trees', 'Most gold obtained through a single tree of gold spell', true
+WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'tree_of_gold');
 
 INSERT INTO camelot_categories
     (name, display_name, description, compare_greater)

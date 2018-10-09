@@ -70,7 +70,7 @@ def most_scientists(summary_text):
 
 def most_massacre_kills(summary_text):
     """Extract number of peasants, thieves, and wizards killed in a massacre attack."""
-    return parse_common_pattern(summary_text, massacre_re, "massacre_kills")
+    return parse_common_pattern(summary_text, massacre_re, "massacre")
 
 
 attack_categories = {

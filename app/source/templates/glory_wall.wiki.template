@@ -22,7 +22,7 @@ Check out the [[Glory Wall - Details]] page for information and instruction on s
 Current high score held by: [[{{high_score.user.name}}]]
 
 {% for glory_wall in glory_walls -%}
-===[[{{glory_wall.user.name}}]]===
+===[[{{glory_wall.user.name}} | {{glory_wall.user.display_name}}]]===
 
 <pre>
 {{glory_wall.full_summary_text}}

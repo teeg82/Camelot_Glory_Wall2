@@ -327,19 +327,18 @@ def save_glory_walls(results, user_profile):
             if category.compare_greater:
                 # Grab the top score
                 high_score = GloryWall.select().where(GloryWall.category == category.id,
-                                                      GloryWall.age == UTOPIA_AGE,
-                                                      GloryWall.user != user_profile) \
+                                                      GloryWall.age == UTOPIA_AGE) \
                                                .order_by(GloryWall.value.desc()) \
                                                .limit(1).get()
             else:
                 high_score = GloryWall.select() \
                                       .where(GloryWall.category == category.id,
-                                             GloryWall.age == UTOPIA_AGE,
-                                             GloryWall.user != user_profile) \
+                                             GloryWall.age == UTOPIA_AGE) \
                                       .order_by(GloryWall.value.asc()) \
                                       .limit(1).get()
         except GloryWall.DoesNotExist:
             high_score = None
+
         # A player only qualifies for top score if they beat the existing top score that was not their own,
         # or there was no existing top score in that category.
         if high_score and high_score.user != user_profile and \
@@ -348,6 +347,16 @@ def save_glory_walls(results, user_profile):
                 print("Existing high score exceeded")
                 update_glory_wall(user_glory_wall, result)
                 top_score.append({'old_score': high_score, 'current_high_score': user_glory_wall})
+        elif high_score.user == user_profile and new_entry:
+            print("New entry achieved top score")
+            old_top_score = GloryWall.select() \
+                                     .where(GloryWall.category == category.id,
+                                            GloryWall.age == UTOPIA_AGE,
+                                            GloryWall.user != user_profile) \
+                                     .order_by(GloryWall.value.asc()) \
+                                     .limit(1)
+            old_top_score = old_top_score.get() if len(old_top_score) == 1 else None
+            top_score.append({'old_score': old_top_score, 'current_high_score': user_glory_wall})
         elif high_score is None:
             print("High score did not exist.")
             # If there was no high score for this entry, it means nobody had ever entered anything.
@@ -387,10 +396,15 @@ def send_response(glory_walls, user_profile):
         response.append("You have achieved the top score in the following categories:\n")
         for score in top_score:
             current_high_score = score['current_high_score']
-            response.append(" - %s, with a score of %d\n" % (current_high_score.category.display_name, current_high_score.value))
+            response.append(" - %s, with a score of %d" % (current_high_score.category.display_name, current_high_score.value))
             old_score = score.get('old_score', None)
             if old_score:
-                response.append("beating the previous score held by @%s" % old_score.user.name)
+                if old_score.user == user_profile:
+                    response.append("beating your previous score of %s\n" % str(old_score.value))
+                else:
+                    response.append("beating the previous score of %s held by @%s\n" % (str(old_score.value), old_score.user.name))
+            else:
+                response.append('\n')
         response.append("\n\n")
 
     own_score = glory_walls["own_score"]
@@ -402,7 +416,11 @@ def send_response(glory_walls, user_profile):
 
     new_score = glory_walls["new_score"]
     if len(new_score) > 0:
-        response.append("I've added the following scores to the glory wall for you:\n")
+        if len(new_score) == 1:
+            plural_this = "this category"
+        else:
+            plural_this = "these categories"
+        response.append("You did not beat the top score, but you have no scores in %s, so I've added the following to the glory wall for you:\n" % plural_this)
         for score in new_score:
             response.append(" - %s, with a score of %d\n" % (score.category.display_name, score.value))
 

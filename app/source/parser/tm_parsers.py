@@ -68,6 +68,14 @@ def nightmare(summary_text):
     return parse_common_pattern(summary_text, nightmare_re, "troops")
 
 
+def land_lust(summary_text):
+    return parse_common_pattern(summary_text, land_lust_re, "acres")
+
+
+def tree_of_gold(summary_text):
+    return parse_common_pattern(summary_text, tree_of_gold_re, "gold")
+
+
 tm_categories = {
     'rob_the_granaries': rob_the_granaries,
     'rob_the_vault': rob_the_vault,
@@ -84,4 +92,6 @@ tm_categories = {
     'fireball': fireball,
     'lightning': lightning,
     'nightmare': nightmare,
+    'land_lust': land_lust,
+    'tree_of_gold': tree_of_gold,
 }
