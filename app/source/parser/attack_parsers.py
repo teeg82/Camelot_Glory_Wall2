@@ -73,6 +73,11 @@ def most_massacre_kills(summary_text):
     return parse_common_pattern(summary_text, massacre_re, "massacre")
 
 
+def most_books_stolen(summary_text):
+    """Extract number of books stolen in a learn attack."""
+    return parse_common_pattern(summary_text, books_re, "books")
+
+
 attack_categories = {
     'most_acres': most_acres,
     'most_kills': most_kills,
@@ -82,4 +87,5 @@ attack_categories = {
     'most_runes': most_runes,
     'most_scientists': most_scientists,
     'most_massacre_kills': most_massacre_kills,
+    'most_books_stolen': most_books_stolen,
 }

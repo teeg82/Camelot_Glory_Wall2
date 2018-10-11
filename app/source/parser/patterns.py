@@ -22,6 +22,7 @@ nightmare_re = re.compile(r"During the night, (?P<troops>(?:\d,?)+) of the men i
 land_lust_re = re.compile(r"given us another (?P<acres>(?:\d,?)+) acres of land")
 tree_of_gold_re = re.compile(r"(?P<gold>(?:\d,?)+) gold coins have fallen from the trees")
 
+books_re = re.compile(r"army looted (?P<books>(?:\d,?)+) books")
 massacre_re = re.compile(r"massacred (?P<massacre>(?:\d,?)+) peasants")
 acres_re = re.compile(r"Your army has taken (?P<acres>(?:\d,?)+) acre")
 kills_re = re.compile(r"We killed about (?P<kills>(?:\d,?)+) enemy troops.\s?(?:We also imprisoned (?P<prisoners>\d+))?")

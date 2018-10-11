@@ -76,6 +76,11 @@ WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'most_massacre_k
 
 INSERT INTO camelot_categories
     (name, display_name, description, compare_greater)
+SELECT 'most_books_stolen', 'Most books stolen', 'Most number of books stolen in a single learn attack', true
+WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'most_books_stolen');
+
+INSERT INTO camelot_categories
+    (name, display_name, description, compare_greater)
 SELECT 'night_strike', 'Most troops assassinated in a single night strike operation', 'Most number of troops assassinated in a single night strike operation', true
 WHERE NOT EXISTS (SELECT 1 FROM camelot_categories WHERE name = 'night_strike');
 
