@@ -15,7 +15,7 @@ propaganda_re = re.compile(r"We have converted (?P<converts>(?:\d,?)+) (?P<remai
 # We have converted X [of the enemy's specialist troops, (elite unit name) from the enemy] to our army.
 
 tornado_re = re.compile(r"laying waste to (?P<buildings>(?:\d,?)+) acres of buildings")
-fools_gold_re = re.compile(r"(?P<gold>(?:\d,?)+) gold coins have been turned into worthless lead")
+fools_gold_re = re.compile(r"Our mages have turned (?P<gold>(?:\d,?)+) gold coins.*to worthless lead")
 fireball_re = re.compile(r"A fireball burns through the skies of (?:.*). (?P<peasants>(?:\d,?)+) peasants are killed")
 lightning_re = re.compile(r"Lightning strikes the Towers in (?:.*) and incinerates (?P<runes>(?:\d,?)+) runes")
 nightmare_re = re.compile(r"During the night, (?P<troops>(?:\d,?)+) of the men in the armies")
